@@ -2601,6 +2601,7 @@ dependencies = [
  "libmpv2",
  "mpv",
  "ratatui",
+ "rquickjs",
  "rustypipe",
  "thiserror",
  "tokio",
