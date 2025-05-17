@@ -2,7 +2,6 @@
 
 
 use youtube_player::{player::Player, yt::YoutubeClient};
-use std::thread;
 use std::io;
 
 struct YoutubePlayer{
@@ -28,33 +27,33 @@ impl YoutubePlayer{
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
-    let mut input = String::new();
     let youtube_player = YoutubePlayer::default();
 
-    println!("検索ワード:");
-    io::stdin()
-    .read_line(&mut input)
-    .expect("入力エラー");
+    let search_result_url = youtube_player.yt.search_and_play().await?;
+    youtube_player.player.play(&search_result_url).unwrap();
+    loop {
+        let mut input = String::new();
+        println!("Enter command (1:Play/2:Pause/3:Search):");
+        io::stdin()
+            .read_line(&mut input)
+            .expect("");
 
-    let search_result = youtube_player.yt.search(&input).await?;
-
-    for (i, track) in search_result.iter().enumerate() {
-        println!("{}: {}", i, track.0.0);
+        match input.trim() {
+            "1" => {
+                youtube_player.player.player_controller(youtube_player::player::PlayerControllerStatus::Playing);
+            },
+            "2" => {
+                youtube_player.player.player_controller(youtube_player::player::PlayerControllerStatus::Paused);
+            },
+            "3" => {
+                if let Ok(url) = youtube_player.yt.search_and_play().await {
+                    youtube_player.player.play(&url).unwrap();
+                }
+            },
+            _ => {
+                println!("無効なコマンドです");
+                continue;
+            }
+        };
     }
-
-    println!("どの曲を再生しますか?");
-    input.clear();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("入力エラー");
-    let index: usize = input.trim().parse().expect("数字を入力してください");
-
-    let id = search_result[index].0.1.clone();
-
-    let url = youtube_player.yt.fetch_song_url(&id).await?;
-    youtube_player.player.play(&url).unwrap();
-
-    thread::park();
-
-    Ok(())
 }

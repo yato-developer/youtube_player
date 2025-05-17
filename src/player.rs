@@ -1,5 +1,5 @@
 use libmpv2::Mpv; // We are not using libmpv library because it was requiring user to install an old version which was not available in many distros so we decided to opt for libmpv2 which is a fork of it
-use std::sync::Arc;
+use std::{f32::MANTISSA_DIGITS, sync::Arc};
 
 
 pub struct Player {
@@ -23,6 +23,13 @@ pub enum MpvError {
     Other(String),
 }
 
+pub enum PlayerControllerStatus {
+    Playing,
+    Paused,
+}
+
+
+
 impl Player {
     /// Creates a new `Player` instance and configures MPV settings for optimized audio playback.
     pub fn new() -> Result<Self, MpvError> {
@@ -44,6 +51,18 @@ impl Player {
 
         let mpv = Arc::new(mpv);
         Ok(Self { player: mpv })
+    }
+
+
+    pub fn player_controller(&self ,command : PlayerControllerStatus){
+        match command {
+        PlayerControllerStatus::Playing => {
+            self.unpause().unwrap();
+        },
+        PlayerControllerStatus::Paused => {
+            self.pause().unwrap();
+        },
+        }
     }
 
     /// Loads and plays a media file from a given URL.

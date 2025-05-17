@@ -1,6 +1,7 @@
 use crate::{ArtistName, ChannelName, PlaylistId, PlaylistName, SongId, SongName, SongUrl};
 use std::fmt::Error;
 use std::path::PathBuf;
+use std::io;
 
 use rustypipe::{
     client::{RustyPipe, RustyPipeQuery},
@@ -28,10 +29,40 @@ impl YoutubeClient{
         //YoutubeClient { client: client }の省略
         YoutubeClient { client }
     }
+
+
+    pub async fn search_and_play(&self) -> Result<String, String> {
+        let mut input = String::new();
+
+        println!("Search word");
+        io::stdin()
+        .read_line(&mut input)
+        .expect("");
+
+
+        let search_result = self.search(&input).await?;
+        
+        input.clear();
+        println!("Which song would you like to play? ");
+        io::stdin()
+            .read_line(&mut input)
+            .expect("");
+            
+        let index: usize = input.trim().parse().expect("");
+        let id = search_result[index].0.1.clone();
+        
+        let url = self.fetch_song_url(&id).await?;
+        
+        Ok(url)
+    }
     
-    pub async fn search(&self, query: &str,) -> Result<Vec<((SongName, SongId),Vec<ArtistName>)>, String>{
+    pub async fn search(&self, query : &str) -> Result<Vec<((SongName, SongId),Vec<ArtistName>)>, String>{
+
+
+
         match self.client.music_search_main(query).await {
         Ok(results) => {
+            
             let mut search_result = vec![];
             
             for item in results.items.items{
@@ -43,6 +74,11 @@ impl YoutubeClient{
 
                 }
             }
+
+            for (i, track) in search_result.iter().enumerate() {
+                println!("{}: {}", i, track.0.0);
+            }
+
             Ok(search_result)
         }  
         Err(_) => Err("Error in Search Result".to_string()),
